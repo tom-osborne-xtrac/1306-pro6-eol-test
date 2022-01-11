@@ -215,36 +215,6 @@ def generate_plotting_data(data, points):
     return pd.concat(extracted_data)
 
 
-def plot_channel(data, file_name, axis, y_channel, label):
-    print(f'Plotting {y_channel}')
-    axis.plot(
-        data['Event Time'],
-        data[y_channel],
-        # color=colour,
-        label=f'{file_name}: {label}',
-        marker=None
-    )
-
-
-def plot_points(data, axis, y_channel, points=''):
-    print(f'Plotting {y_channel}')
-    if points == '':
-        axis.plot(
-            data['Event Time'],
-            data[y_channel],
-            'o',
-            linestyle = 'None'
-        )
-    else:
-        axis.plot(
-            data['Event Time'].iloc[points],
-            data[y_channel].iloc[points],
-            'o',
-            linestyle = 'None'
-        )
-
-
-
 #  Open Files
 # -----------------------
 # raw_data, fpath, fdir, fname = get_data(
@@ -260,168 +230,96 @@ def plot_points(data, axis, y_channel, points=''):
 #     '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'
 #     )
 
-# raw_data, fpath, fdir, fname = get_data()
-# raw_data2, fpath2, fdir2, fname2 = get_data()
+raw_data, fpath, fdir, fname = get_data()
+raw_data2, fpath2, fdir2, fname2 = get_data()
 
-raw_data = []
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
-    '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
-    '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
-    '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
-
-
-# Figure 1 - Summary plot
-# ------------------
+foutput = f'{fdir}/{fname}.png'
+foutput2 = f'{fdir2}/{fname2}.png'
 figsize = (16, 9)
-fig, ax = plt.subplots(3, figsize=figsize)
-xlim = 200
-xmaj = math.floor(xlim / 20)
-xminor = math.floor(xmaj / 5)
 
-set_axis(ax, 'x', 'Time [s]', 0, xlim, xmaj, xminor)
-axSecondary = ax[0].twinx()
-set_axis([axSecondary], 'y', 'Temperature [degC]', 20, 70, 5, 2.5)
+raw_data, sr = add_calculated_channels(raw_data)
+raw_data2, sr2 = add_calculated_channels(raw_data2)
 
-fig2, ax2 = plt.subplots(2, 2, figsize=figsize)
-
-foutput = []
-plotting_data = []
-
-for rdata, fpath, fdir, fname in raw_data:
-    foutput.append(f'{fdir}/{fname}.png')
-
-    rdata, sr = add_calculated_channels(rdata)
-    rdata = set_start(rdata)
-    points, points_grouped = find_points(rdata, sr)
-    plotting_data = generate_plotting_data(rdata, points_grouped)
-
-    # Plot 1 - IP Speed & Temperature
-    plot_channel(rdata, fname, axSecondary, '[V9] Pri. GBox Oil Temp', 'Oil Temperature [degC]')
-    plot_channel(rdata, fname, ax[0], 'IP Speed 1', 'Input Speed [rpm]')
-    plot_points(rdata, ax[0], 'IP Speed 1', points)
-    plot_points(plotting_data, ax[0], 'IP Speed 1')
-
-    # Plot 2 - IP Torque
-    plot_channel(rdata, fname, ax[1], 'IP Torque 1', 'Input Speed [rpm]')
-    plot_points(plotting_data, ax[1], 'IP Torque 1')
-
-    # Plot 3
-    plot_channel(rdata, fname, ax[2], 'AxleTorque', 'Axle Torque [Nm]')
-
-
+# Set starting position
+# ------------------
+raw_data = set_start(raw_data)
+raw_data2 = set_start(raw_data2)
 
 # Prints a list of column headers (channel names) - useful for adding new channels to plots
 # print('\n'.join([tuple[0] for tuple in raw_data.columns.values]))
 
 # Find points
-# points, points_grouped = find_points(raw_data, sr)
+points, points_grouped = find_points(raw_data, sr)
+points2, points_grouped2 = find_points(raw_data2, sr2)
 
-# plotting_data = generate_plotting_data(raw_data, points_grouped)
-# plotting_data2 = generate_plotting_data(raw_data2, points_grouped2)
+plotting_data = generate_plotting_data(raw_data, points_grouped)
+plotting_data2 = generate_plotting_data(raw_data2, points_grouped2)
 
-
+# Figure 1 - Summary plot
+# ------------------
+fig, ax = plt.subplots(3, figsize=figsize)
+xlim = 200
+xmaj = math.floor(xlim / 20)
+xminor = math.floor(xmaj / 5)
+set_axis(ax, 'x', 'Time [s]', 0, xlim, xmaj, xminor)
 
 # Plot 1
 # ------------------
+axSecondary = ax[0].twinx()
+axSecondary.plot(
+    raw_data['Event Time'],
+    raw_data['[V9] Pri. GBox Oil Temp'],
+    color="green",
+    label=f'{fname}: Oil Temperature [degC]',
+    marker=None
+)
+axSecondary.plot(
+    raw_data2['Event Time'],
+    raw_data2['[V9] Pri. GBox Oil Temp'],
+    color="lime",
+    label=f'{fname2}: Oil Temperature [degC]',
+    marker=None
+)
+set_axis([axSecondary], 'y', 'Temperature [degC]', 20, 70, 5, 2.5)
 
-
-
-# axSecondary.plot(
-#     raw_data['Event Time'],
-#     raw_data['[V9] Pri. GBox Oil Temp'],
-#     color="green",
-#     label=f'{fname}: Oil Temperature [degC]',
-#     marker=None
-# )
-# axSecondary.plot(
-#     raw_data2['Event Time'],
-#     raw_data2['[V9] Pri. GBox Oil Temp'],
-#     color="lime",
-#     label=f'{fname2}: Oil Temperature [degC]',
-#     marker=None
-# )
-
-
-# ax[0].plot(
-#     raw_data['Event Time'],
-#     raw_data['IP Speed 1'],
-#     color="blue",
-#     label=f'{fname}: Input Speed [rpm]',
-#     marker=None
-# )
-# ax[0].plot(
-#     raw_data2['Event Time'],
-#     raw_data2['IP Speed 1'],
-#     color="deepskyblue",
-#     label=f'{fname2}: Input Speed [rpm]',
-#     marker=None
-# )
-# ax[0].plot(
-#     raw_data['Event Time'].iloc[points],
-#     raw_data['IP Speed 1'].iloc[points],
-#     'ro',
-#     linestyle = 'None'
-# )
-# ax[0].plot(
-#     plotting_data['Event Time'],
-#     plotting_data['IP Speed 1'],
-#     'ro',
-#     linestyle = 'None'
-# )
-# ax[0].plot(
-#     plotting_data2['Event Time'],
-#     plotting_data2['IP Speed 1'],
-#     'go',
-#     linestyle = 'None'
-# )
-# ax[0].plot(
-#     raw_data2['Event Time'].iloc[points2],
-#     raw_data2['IP Speed 1'].iloc[points2],
-#     'go',
-#     linestyle = 'None'
-# )
-
-
-
-# Plot 2
-# ------------------
-# ax[1].plot(
-#     raw_data['Event Time'],
-#     raw_data['IP Torque 1'],
-#     color="red",
-#     label=f'{fname}: IP Torque [Nm]',
-#     marker=None
-# )
-# ax[1].plot(
-#     plotting_data['Event Time'],
-#     plotting_data['IP Torque 1'],
-#     'bo',
-#     linestyle = 'None'
-# )
-# ax[1].plot(
-#     raw_data2['Event Time'],
-#     raw_data2['IP Torque 1'],
-#     color="orange",
-#     label=f'{fname2}: IP Torque [Nm]',
-#     marker=None
-# )
-# ax[1].plot(
-#     plotting_data2['Event Time'],
-#     plotting_data2['IP Torque 1'],
-#     'go',
-#     linestyle = 'None'
-# )
-
-
-
+ax[0].plot(
+    raw_data['Event Time'],
+    raw_data['IP Speed 1'],
+    color="blue",
+    label=f'{fname}: Input Speed [rpm]',
+    marker=None
+)
+ax[0].plot(
+    raw_data2['Event Time'],
+    raw_data2['IP Speed 1'],
+    color="deepskyblue",
+    label=f'{fname2}: Input Speed [rpm]',
+    marker=None
+)
+ax[0].plot(
+    raw_data['Event Time'].iloc[points],
+    raw_data['IP Speed 1'].iloc[points],
+    'ro',
+    linestyle = 'None'
+)
+ax[0].plot(
+    plotting_data['Event Time'],
+    plotting_data['IP Speed 1'],
+    'ro',
+    linestyle = 'None'
+)
+ax[0].plot(
+    plotting_data2['Event Time'],
+    plotting_data2['IP Speed 1'],
+    'go',
+    linestyle = 'None'
+)
+ax[0].plot(
+    raw_data2['Event Time'].iloc[points2],
+    raw_data2['IP Speed 1'].iloc[points2],
+    'go',
+    linestyle = 'None'
+)
 ax[0].legend(loc=2, facecolor="white") # loc=2 == 'upper left'
 ax[0].set_zorder(1)
 ax[0].set_frame_on(False)
@@ -430,6 +328,35 @@ axSecondary.legend(loc=1, facecolor="white") # loc=1 == 'upper right'
 ax[0].set_title("Input Speed & Oil Temperature", loc='left')
 set_axis([ax[0]], 'y', 'Speed [rpm]', 0, 10000, 1000, 500)
 
+
+# Plot 2
+# ------------------
+ax[1].plot(
+    raw_data['Event Time'],
+    raw_data['IP Torque 1'],
+    color="red",
+    label=f'{fname}: IP Torque [Nm]',
+    marker=None
+)
+ax[1].plot(
+    plotting_data['Event Time'],
+    plotting_data['IP Torque 1'],
+    'bo',
+    linestyle = 'None'
+)
+ax[1].plot(
+    raw_data2['Event Time'],
+    raw_data2['IP Torque 1'],
+    color="orange",
+    label=f'{fname2}: IP Torque [Nm]',
+    marker=None
+)
+ax[1].plot(
+    plotting_data2['Event Time'],
+    plotting_data2['IP Torque 1'],
+    'go',
+    linestyle = 'None'
+)
 ax[1].set_title("Input Torque", loc='left')
 ax[1].legend(loc=1, facecolor="white")
 set_axis([ax[1]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
@@ -437,142 +364,142 @@ set_axis([ax[1]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
 # Plot 3
 # ------------------
-# ax[2].plot(
-#     raw_data['Event Time'],
-#     raw_data['AxleTorque'],
-#     color="purple",
-#     label=f'{fname}: Axle Torque [Nm]',
-#     marker=None
-# )
-# ax[2].plot(
-#     raw_data2['Event Time'],
-#     raw_data2['AxleTorque'],
-#     color="magenta",
-#     label=f'{fname2}: Axle Torque [Nm]',
-#     marker=None
-# )
+ax[2].plot(
+    raw_data['Event Time'],
+    raw_data['AxleTorque'],
+    color="purple",
+    label=f'{fname}: Axle Torque [Nm]',
+    marker=None
+)
+ax[2].plot(
+    raw_data2['Event Time'],
+    raw_data2['AxleTorque'],
+    color="magenta",
+    label=f'{fname2}: Axle Torque [Nm]',
+    marker=None
+)
 ax[2].set_title("Axle Torque (LH + RH)", loc='left')
-# ax[2].legend(loc=1, facecolor="white")
+ax[2].legend(loc=1, facecolor="white")
 set_axis([ax[2]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
 fig.suptitle(f'{fdir}', fontsize=10)
 plt.subplots_adjust(left=0.05, bottom=0.07, right=0.965, top=0.9, wspace=0.2, hspace=0.4)
-# plt.savefig(foutput, format='png', bbox_inches='tight', dpi=150)
-# plt.savefig(foutput2, format='png', bbox_inches='tight', dpi=150)
+plt.savefig(foutput, format='png', bbox_inches='tight', dpi=150)
+plt.savefig(foutput2, format='png', bbox_inches='tight', dpi=150)
 
 
-# # Figure 2 - EoL Plot
-# # ------------------
-# fig2, ax2 = plt.subplots(2, 2, figsize=figsize)
+# Figure 2 - EoL Plot
+# ------------------
+fig2, ax2 = plt.subplots(2, 2, figsize=figsize)
 
-# # Plot 1 - IP Torque
-# ax2[0, 0].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['IP Torque 1'],
-#     color="red",
-#     label=f'{fname}: IP Torque [Nm]',
-#     marker='o'
-# )
-# ax2[0, 0].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['IP Torque 1'],
-#     color="orange",
-#     label=f'{fname2}: IP Torque [Nm]',
-#     marker='o'
-# )
-# ax2[0, 0].set_title("IP Torque Comparison", loc='left')
-# ax2[0, 0].legend(loc=2, facecolor="white")
-# set_axis([ax2[0, 0]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
+# Plot 1 - IP Torque
+ax2[0, 0].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['IP Torque 1'],
+    color="red",
+    label=f'{fname}: IP Torque [Nm]',
+    marker='o'
+)
+ax2[0, 0].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['IP Torque 1'],
+    color="orange",
+    label=f'{fname2}: IP Torque [Nm]',
+    marker='o'
+)
+ax2[0, 0].set_title("IP Torque Comparison", loc='left')
+ax2[0, 0].legend(loc=2, facecolor="white")
+set_axis([ax2[0, 0]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
-# # Plot 2 - Oil Flow
-# ax2[0, 1].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['Raw Oil Flow'],
-#     color="blue",
-#     label=f'{fname}: Flow Rate [L/min]',
-#     marker='o'
-# )
-# ax2[0, 1].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['Raw Oil Flow'],
-#     color="deepskyblue",
-#     label=f'{fname2}: Flow Rate [L/min]',
-#     marker='o'
-# )
-# ax2[0, 1].set_title("Oil Flow Rate Comparison", loc='left')
-# ax2[0, 1].legend(loc=2, facecolor="white")
-# set_axis([ax2[0, 1]], 'y', 'Oil Flow Rate [L/min]', 0, 20, 2, 1)
+# Plot 2 - Oil Flow
+ax2[0, 1].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['Raw Oil Flow'],
+    color="blue",
+    label=f'{fname}: Flow Rate [L/min]',
+    marker='o'
+)
+ax2[0, 1].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['Raw Oil Flow'],
+    color="deepskyblue",
+    label=f'{fname2}: Flow Rate [L/min]',
+    marker='o'
+)
+ax2[0, 1].set_title("Oil Flow Rate Comparison", loc='left')
+ax2[0, 1].legend(loc=2, facecolor="white")
+set_axis([ax2[0, 1]], 'y', 'Oil Flow Rate [L/min]', 0, 20, 2, 1)
 
-# # Plot 3 - Oil Pressure
-# ax2[1, 0].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['[P1] Pri.Gbox Press'],
-#     color="purple",
-#     label=f'{fname}: Oil Pressure [bar]',
-#     marker='o'
-# )
-# ax2[1, 0].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['[P1] Pri.Gbox Press'],
-#     color="magenta",
-#     label=f'{fname2}: Oil Pressure [bar]',
-#     marker='o'
-# )
-# ax2[1, 0].set_title("Oil Pressure Comparison", loc='left')
-# ax2[1, 0].legend(loc=2, facecolor="white")
-# set_axis([ax2[1, 0]], 'y', 'Oil Pressure [bar]', 0, 3, 0.5, 0.25)
+# Plot 3 - Oil Pressure
+ax2[1, 0].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['[P1] Pri.Gbox Press'],
+    color="purple",
+    label=f'{fname}: Oil Pressure [bar]',
+    marker='o'
+)
+ax2[1, 0].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['[P1] Pri.Gbox Press'],
+    color="magenta",
+    label=f'{fname2}: Oil Pressure [bar]',
+    marker='o'
+)
+ax2[1, 0].set_title("Oil Pressure Comparison", loc='left')
+ax2[1, 0].legend(loc=2, facecolor="white")
+set_axis([ax2[1, 0]], 'y', 'Oil Pressure [bar]', 0, 3, 0.5, 0.25)
 
-# # Plot 4 - Oil Temperature
-# ax2[1, 1].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['[V9] Pri. GBox Oil Temp'],
-#     color="green",
-#     label=f'{fname}: Oil Temperature [degC]',
-#     marker='o'
-# )
-# ax2[1, 1].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['[V9] Pri. GBox Oil Temp'],
-#     color="lime",
-#     label=f'{fname2}: Oil Temperature [degC]',
-#     marker='o'
-# )
-# ax2[1, 1].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['GBox T2'],
-#     color="blue",
-#     label=f'{fname}: RH Flange Temp [degC]',
-#     marker='o'
-# )
-# ax2[1, 1].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['GBox T2'],
-#     color="deepskyblue",
-#     label=f'{fname2}: RH Flange Temp [degC]',
-#     marker='o'
-# )
-# ax2[1, 1].plot(
-#     plotting_data['IP Speed 1'],
-#     plotting_data['GBox T3'],
-#     color="red",
-#     label=f'{fname}: LH Flange Temp [degC]',
-#     marker='o',
-#     linestyle='--'
-# )
-# ax2[1, 1].plot(
-#     plotting_data2['IP Speed 1'],
-#     plotting_data2['GBox T3'],
-#     color="orange",
-#     label=f'{fname2}: LH Flange Temp [degC]',
-#     marker='o',
-#     linestyle='--'
-# )
-# ax2[1, 1].set_title("Oil & OP Flange Temperature Comparison", loc='left')
-# ax2[1, 1].legend(loc=2, facecolor="white")
-# set_axis([ax2[1, 1]], 'y', 'Temperature [degC]', 20, 100, 10, 2.5)
+# Plot 4 - Oil Temperature
+ax2[1, 1].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['[V9] Pri. GBox Oil Temp'],
+    color="green",
+    label=f'{fname}: Oil Temperature [degC]',
+    marker='o'
+)
+ax2[1, 1].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['[V9] Pri. GBox Oil Temp'],
+    color="lime",
+    label=f'{fname2}: Oil Temperature [degC]',
+    marker='o'
+)
+ax2[1, 1].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['GBox T2'],
+    color="blue",
+    label=f'{fname}: RH Flange Temp [degC]',
+    marker='o'
+)
+ax2[1, 1].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['GBox T2'],
+    color="deepskyblue",
+    label=f'{fname2}: RH Flange Temp [degC]',
+    marker='o'
+)
+ax2[1, 1].plot(
+    plotting_data['IP Speed 1'],
+    plotting_data['GBox T3'],
+    color="red",
+    label=f'{fname}: LH Flange Temp [degC]',
+    marker='o',
+    linestyle='--'
+)
+ax2[1, 1].plot(
+    plotting_data2['IP Speed 1'],
+    plotting_data2['GBox T3'],
+    color="orange",
+    label=f'{fname2}: LH Flange Temp [degC]',
+    marker='o',
+    linestyle='--'
+)
+ax2[1, 1].set_title("Oil & OP Flange Temperature Comparison", loc='left')
+ax2[1, 1].legend(loc=2, facecolor="white")
+set_axis([ax2[1, 1]], 'y', 'Temperature [degC]', 20, 100, 10, 2.5)
 
-# for axs in ax2:
-#     set_axis(axs, 'x', 'IP Speed [rpm]', 0, 8000, 1000, 200)
-# fig2.suptitle(f'{fname} vs {fname2}', fontsize=16)
+for axs in ax2:
+    set_axis(axs, 'x', 'IP Speed [rpm]', 0, 8000, 1000, 200)
+fig2.suptitle(f'{fname} vs {fname2}', fontsize=16)
 plt.subplots_adjust(left=0.05, bottom=0.07, right=0.965, top=0.9, wspace=0.2, hspace=0.4)
 plt.show()
