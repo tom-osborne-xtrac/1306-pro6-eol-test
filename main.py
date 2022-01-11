@@ -7,83 +7,6 @@ import numpy as np
 import math
 
 
-"""
-List of available channels: - 
-Time Into Test
-Event Time
-OP Speed 1
-OP Torque 1
-OP Speed 2
-OP Torque 2
-IP Speed 1
-IP Torque 1
-GBox T1
-GBox T2
-GBox T3
-[V2] Pressure GBX out
-[V3] Pressure Filter out
-[V4] Temperature GBX out
-[V5] Temperature Filter out
-[V9] Pri. GBox Oil Temp
-[P1] Pri.Gbox Press
-Raw Oil Flow
-Avg Oil Flow
-Oil Flow Revs
-TCM_CluPosnRel
-TCM_DrvModReqd
-TCM_GearActv
-TCM_CluSts
-TCM CluPosnBas
-TCM_ClutchFault
-TCM_CluSlipSts
-TCM_CluTqDes
-TCM_GearTar
-TCM_GearActtnActv
-TCM_GearEngd
-TCM_CluTqTrf
-TCM_TqEstimd
-TCM_CluTqCalcd
-TCM_ClutchTrq
-TCM_GearActuatorFault
-TCM_FaultReaction1
-TCM_FaultReaction2
-TCM_ClutchFault
-TCM_BSW_ElecFault
-TCM_SysPLow
-TCM_ClutchOpenTime
-TCM_ClutchOverTemp
-TCM_ClutchHighTemp
-TCM_HydOilOverTemp
-TCM_LubPOutOfRange
-TCM_SumpOilOverTemp
-TCM_SumpOilHighTemp
-TCM_CDS_triggered
-TCM_FaultState
-TCM GearActr1PosnBas
-TCM GearActr2PosnBas
-TCM GearActr3PosnBas
-TCM GearActr4PosnBas
-TCM_TC0FctSt
-TCM CluPosnBas
-TCM_GearEngd
-TCM_GLBFct_St
-TCM OutShaftNBas
-TCM MaiShaftNBas
-TCM InShaftNBas
-TCM ClushaftNBas
-TCM_FaultState_TCM
-TCM_OilPmpEnaDutyCycOutp
-TCM_OilPmpEnaPerdOutp
-TCM_SysPBas
-TCM_HydoilTBas
-1306 Oil In - TCM_SumpoilTBas
-1306 Oil Out - TCM_Sumpoil2TBas
-AxleTorque
-LockingTorque
-OPSpeedDelta
-"""
-
-
 def get_data(path=''):
     """
     Defines the file path for analysis.
@@ -253,18 +176,22 @@ def plot_points(data, chart, x_axis, y_axis, points=''):
 #  Open Files
 # -----------------------
 raw_data = []
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
-    '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
-    '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
-raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-    '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
-    '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
+# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+#     '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
+#     '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
+# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+#     '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
+#     '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
+# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+#     '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
+#     '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
+
+raw_data.append(get_data())
+raw_data.append(get_data())
+raw_data.append(get_data())
 
 
 # Figure 1 - Summary plot
@@ -274,18 +201,17 @@ fig, ax = plt.subplots(3, figsize=figsize)
 xlim = 200
 xmaj = math.floor(xlim / 20)
 xminor = math.floor(xmaj / 5)
-
-set_axis(ax, 'x', 'Time [s]', 0, xlim, xmaj, xminor)
 axSecondary = ax[0].twinx()
-set_axis([axSecondary], 'y', 'Temperature [degC]', 20, 70, 5, 2.5)
 
 fig2, ax2 = plt.subplots(2, 2, figsize=figsize)
 
 foutput = []
+fnames = []
 plotting_data = []
 
 for rdata, fpath, fdir, fname in raw_data:
     foutput.append(f'{fdir}/{fname}.png')
+    fnames.append(f'{fname}')
 
     rdata, sr = add_calculated_channels(rdata)
     rdata = set_start(rdata)
@@ -307,66 +233,82 @@ for rdata, fpath, fdir, fname in raw_data:
 
     # Fig 2, Top-Left
     plot_channel(plotting_data, fname, ax2[0, 0], 'IP Speed 1', 'IP Torque 1', 'IP Torque [Nm]', 'o')
+
+    # Fig 2, Top-Right
     plot_channel(plotting_data, fname, ax2[0, 1], 'IP Speed 1', 'Raw Oil Flow', 'Flow Rate [l/min]', 'o')
+
+    # Fig 2, Bottom-Left
     plot_channel(plotting_data, fname, ax2[1, 0], 'IP Speed 1', '[P1] Pri.Gbox Press', 'Oil Pressure [bar]', 'o')
+
+    # Fig 2, Bottom-Right
     plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', '[V9] Pri. GBox Oil Temp', 'Oil Temperature [degC]', 'o')
     plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T2', 'RH Flange Temp [degC]', 'o')
     plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T3', 'LH Flange Temp [degC]', 'o')
 
 
+# Plot Formatting
+# -----------------------
 
+# Fig 1, Plot 1
 ax[0].legend(loc=2, facecolor="white") # loc=2 == 'upper left'
 ax[0].set_zorder(1)
 ax[0].set_frame_on(False)
-axSecondary.set_frame_on(True)
-axSecondary.legend(loc=1, facecolor="white") # loc=1 == 'upper right'
 ax[0].set_title("Input Speed & Oil Temperature", loc='left')
 set_axis([ax[0]], 'y', 'Speed [rpm]', 0, 10000, 1000, 500)
 
+# Fig 1, Plot 1 Secondary Axis
+axSecondary.set_frame_on(True)
+axSecondary.legend(loc=1, facecolor="white") # loc=1 == 'upper right'
+set_axis([axSecondary], 'y', 'Temperature [degC]', 20, 70, 5, 2.5)
+
+# Fig 1, Plot 2
 ax[1].set_title("Input Torque", loc='left')
 ax[1].legend(loc=1, facecolor="white")
 set_axis([ax[1]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
 
-# Plot 3
-# -----------------------
-
+# Fig 1, Plot 3
 ax[2].set_title("Axle Torque (LH + RH)", loc='left')
 ax[2].legend(loc=1, facecolor="white")
 set_axis([ax[2]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
+set_axis(ax, 'x', 'Time [s]', 0, xlim, xmaj, xminor)
+
+# Fig 1, Output
 fig.suptitle(f'{fdir}', fontsize=10)
-plt.subplots_adjust(left=0.05, bottom=0.07, right=0.965, top=0.9, wspace=0.2, hspace=0.4)
+# plt.subplots_adjust(left=0.05, bottom=0.07, right=0.965, top=0.9, wspace=0.2, hspace=0.4)
 # plt.savefig(foutput, format='png', bbox_inches='tight', dpi=150)
 # plt.savefig(foutput2, format='png', bbox_inches='tight', dpi=150)
 
 
-# # Figure 2 - EoL Plot
-# -----------------------
-# fig2, ax2 = plt.subplots(2, 2, figsize=figsize)
-
-# Plot 1 - IP Torque
+# Fig 2, Top-Left - IP Torque
 ax2[0, 0].set_title("IP Torque Comparison", loc='left')
 ax2[0, 0].legend(loc=2, facecolor="white")
 set_axis([ax2[0, 0]], 'y', 'Torque [Nm]', 0, 30, 10, 2)
 
-# Plot 2 - Oil Flow
+# Fig 2, Top-Right - Oil Flow
 ax2[0, 1].set_title("Oil Flow Rate Comparison", loc='left')
 ax2[0, 1].legend(loc=2, facecolor="white")
 set_axis([ax2[0, 1]], 'y', 'Oil Flow Rate [L/min]', 0, 20, 2, 1)
 
-# Plot 3 - Oil Pressure
+# Fig 2, Bottom-Left - Oil Pressure
 ax2[1, 0].set_title("Oil Pressure Comparison", loc='left')
 ax2[1, 0].legend(loc=2, facecolor="white")
 set_axis([ax2[1, 0]], 'y', 'Oil Pressure [bar]', 0, 3, 0.5, 0.25)
 
-# Plot 4 - Oil Temperature
+# Fig 2, Bottom-Right - Oil Temperature
 ax2[1, 1].set_title("Oil & OP Flange Temperature Comparison", loc='left')
 ax2[1, 1].legend(loc=2, facecolor="white")
 set_axis([ax2[1, 1]], 'y', 'Temperature [degC]', 20, 100, 10, 2.5)
 
 for axs in ax2:
     set_axis(axs, 'x', 'IP Speed [rpm]', 0, 8000, 1000, 200)
-# fig2.suptitle(f'{fname} vs {fname2}', fontsize=16)
+
+# Fig 2, Output
+title = ''
+for _name in fnames:
+    title = title + ' vs ' + _name
+fig2.suptitle(f'{title}', fontsize=16)
+
 plt.subplots_adjust(left=0.05, bottom=0.07, right=0.965, top=0.9, wspace=0.2, hspace=0.4)
 plt.show()
