@@ -171,6 +171,7 @@ def plot_points(data, chart, x_axis, y_axis, indices=''):
 # o  Add colour management for plotting when plotting multiple files for comparison
 # o  Determine correct output for graphs
 # o  Add print to PDF or savefig function to save the output into each raw_data folder
+# o  Legend overlaps data
 # -----------------------
 
 

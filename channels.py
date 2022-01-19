@@ -1,5 +1,5 @@
 """
-List of available channels: - 
+List of available channels: -
 Time Into Test
 Event Time
 OP Speed 1
