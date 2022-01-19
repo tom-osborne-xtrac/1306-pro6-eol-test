@@ -138,24 +138,27 @@ def generate_plotting_data(data, pts):
     return pd.concat(extracted_data)
 
 
-def plot_channel(data, file_name, chart, x_axis, y_axis, label, marker=''):
+def plot_channel(data, file_name, chart, x_axis, y_axis, label, colour, marker=''):
     print(f'Plotting {y_axis}')
     chart.plot(
         data[x_axis],
         data[y_axis],
-        # color=colour,
+        color=colour,
         label=f'{file_name}: {label}',
-        marker=marker
+        marker=marker,
+        markersize=3
     )
 
 
-def plot_points(data, chart, x_axis, y_axis, indices=''):
+def plot_points(data, chart, x_axis, y_axis, colour, indices=''):
     print(f'Plotting {y_axis}')
     if indices == '':
         chart.plot(
             data[x_axis],
             data[y_axis],
             'o',
+            markersize=3,
+            color=colour,
             linestyle='None'
         )
     else:
@@ -163,6 +166,8 @@ def plot_points(data, chart, x_axis, y_axis, indices=''):
             data[x_axis].iloc[points],
             data[y_axis].iloc[points],
             'o',
+            markersize=3,
+            color=colour,
             linestyle='None'
         )
 
@@ -178,21 +183,21 @@ def plot_points(data, chart, x_axis, y_axis, indices=''):
 #  Open Files
 # -----------------------
 raw_data = []
-raw_data.append(get_data(
+raw_data.append((get_data(
     '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
     '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
-    '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
-raw_data.append(get_data(
+    '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'), 'blue'))
+raw_data.append((get_data(
     '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
     '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
-    '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
-raw_data.append(get_data(
+    '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'), 'red'))
+raw_data.append((get_data(
     '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
     '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
-    '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
+    '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'), 'black'))
 
 # raw_data.append(get_data())
 # raw_data.append(get_data())
@@ -200,6 +205,7 @@ raw_data.append(get_data(
 
 # Figure 1 - Summary plot
 # -----------------------
+plt.rcParams['lines.linewidth'] = 0.7
 figsize = (16, 9)
 fig, ax = plt.subplots(3, figsize=figsize)
 xlim = 200
@@ -213,7 +219,7 @@ foutput = []
 fnames = []
 plotting_data = []
 
-for rdata, fpath, fdir, fname in raw_data:
+for (rdata, fpath, fdir, fname), plot_color in raw_data:
     foutput.append(f'{fdir}/{fname}.png')
     fnames.append(f'{fname}')
 
@@ -224,26 +230,43 @@ for rdata, fpath, fdir, fname in raw_data:
     print(plotting_data)
 
     # Fig 1, Plot 1 - IP Speed & Temperature
-    plot_channel(rdata, fname, axSecondary, 'Event Time', '[V9] Pri. GBox Oil Temp', 'Oil Temperature [degC]')
-    plot_channel(rdata, fname, ax[0], 'Event Time', 'IP Speed 1', 'Input Speed [rpm]')
-    plot_points(rdata, ax[0], 'Event Time', 'IP Speed 1', points)
-    plot_points(plotting_data, ax[0], 'Event Time', 'IP Speed 1')
+    plot_channel(
+        rdata,
+        fname,
+        axSecondary,
+        'Event Time',
+        '[V9] Pri. GBox Oil Temp',
+        'Oil Temperature [degC]',
+        plot_color
+    )
+    plot_channel(rdata, fname, ax[0], 'Event Time', 'IP Speed 1', 'Input Speed [rpm]', plot_color)
+    plot_points(rdata, ax[0], 'Event Time', 'IP Speed 1', plot_color, points)
+    plot_points(plotting_data, ax[0], 'Event Time', 'IP Speed 1', plot_color)
 
     # Fig 1, Plot 2 - IP Torque
-    plot_channel(rdata, fname, ax[1], 'Event Time', 'IP Torque 1', 'Input Speed [rpm]')
-    plot_points(plotting_data, ax[1], 'Event Time', 'IP Torque 1')
+    plot_channel(rdata, fname, ax[1], 'Event Time', 'IP Torque 1', 'Input Speed [rpm]', plot_color)
+    plot_points(plotting_data, ax[1], 'Event Time', 'IP Torque 1', plot_color)
 
     # Fig 1, Plot 3
-    plot_channel(rdata, fname, ax[2], 'Event Time', 'AxleTorque', 'Axle Torque [Nm]')
+    plot_channel(rdata, fname, ax[2], 'Event Time', 'AxleTorque', 'Axle Torque [Nm]', plot_color)
 
     # Fig 2, Top-Left
-    plot_channel(plotting_data, fname, ax2[0, 0], 'IP Speed 1', 'IP Torque 1', 'IP Torque [Nm]', 'o')
+    plot_channel(plotting_data, fname, ax2[0, 0], 'IP Speed 1', 'IP Torque 1', 'IP Torque [Nm]', plot_color, 'o')
 
     # Fig 2, Top-Right
-    plot_channel(plotting_data, fname, ax2[0, 1], 'IP Speed 1', 'Raw Oil Flow', 'Flow Rate [l/min]', 'o')
+    plot_channel(plotting_data, fname, ax2[0, 1], 'IP Speed 1', 'Raw Oil Flow', 'Flow Rate [l/min]', plot_color, 'o')
 
     # Fig 2, Bottom-Left
-    plot_channel(plotting_data, fname, ax2[1, 0], 'IP Speed 1', '[P1] Pri.Gbox Press', 'Oil Pressure [bar]', 'o')
+    plot_channel(
+        plotting_data,
+        fname,
+        ax2[1, 0],
+        'IP Speed 1',
+        '[P1] Pri.Gbox Press',
+        'Oil Pressure [bar]',
+        plot_color,
+        'o'
+    )
 
     # Fig 2, Bottom-Right
     plot_channel(
@@ -253,10 +276,11 @@ for rdata, fpath, fdir, fname in raw_data:
         'IP Speed 1',
         '[V9] Pri. GBox Oil Temp',
         'Oil Temperature [degC]',
+        plot_color,
         'o'
     )
-    plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T2', 'RH Flange Temp [degC]', 'o')
-    plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T3', 'LH Flange Temp [degC]', 'o')
+    plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T2', 'RH Flange Temp [degC]', plot_color, 'o')
+    plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T3', 'LH Flange Temp [degC]', plot_color, 'o')
 
 
 # Plot Formatting
