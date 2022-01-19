@@ -1,19 +1,20 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
+import math
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 
 
 def get_data(path=''):
     """
     Defines the file path for analysis.
     File path can be passed as variable or left blank.
-    If left blank, the function will open a file dialog allowing user to select a file
+    If left blank, the function will open a file dialog
+    allowing user to select a file
     """
-    if(path == ''):
+    if path == '':
         root = tk.Tk()
         root.withdraw()
         file_path = filedialog.askopenfilename()
@@ -39,17 +40,18 @@ def add_calculated_channels(data):
     """
     # Calculated Channels
     # ------------------
-    sr = calc_sample_rate(data)
+    sample_rate = calc_sample_rate(data)
     data['AxleTorque'] = data['OP Torque 1'] + data['OP Torque 2']
     data['LockingTorque'] = data['OP Torque 1'] - data['OP Torque 2']
     data['OPSpeedDelta'] = data['OP Speed 1'] - data['OP Speed 2']
 
-    return data, sr
+    return data, sample_rate
 
 
 def set_axis(plots, axis, label, start, end, major, minor):
     """
-    Function for setting plot label, axis major and minor ticks and formats the gridlines
+    Function for setting plot label, axis major
+    and minor ticks and formats the gridlines
     """
     for plot in plots:
         if major:
@@ -78,7 +80,7 @@ def set_axis(plots, axis, label, start, end, major, minor):
 
 def set_start(data):
     """
-    Finds the start of the EoL test run and removes data beforehand. 
+    Finds the start of the EoL test run and removes data beforehand.
     Adjusts 'Event Time' channel to 0s at start
     """
     EoL_start_1 = np.argwhere(np.array(data['IP Speed 1']) < 10).flatten().tolist()
@@ -100,20 +102,19 @@ def set_start(data):
 
 def find_points(file, sample_rate):
     """
-    Finds a start and end index for each 
-    speed step with a 5s buffer form ramped sections
+    Finds a start and end index for each speed step with a 5s buffer form ramped sections
     """
     max_idx = sorted(np.argwhere(np.array(file['IP Speed 1']) > 5995).flatten().tolist())[-1]
-    points = []
+    list_of_points = []
     for i in range(6):
         step_temp = np.argwhere(np.array(file.loc[0:max_idx, 'IP Speed 1']) > (i+1) * 950).flatten().tolist()
         step_temp_2 = np.argwhere(np.array(file.loc[0:max_idx, 'IP Speed 1']) < (i+1) * 1000 + 350).flatten().tolist()
         step_temp_sort = sorted(list(set(step_temp).intersection(step_temp_2)))
-        points.append(step_temp_sort[1] + (int(sample_rate) * 5))
-        points.append(step_temp_sort[-1] - (int(sample_rate) * 5))
+        list_of_points.append(step_temp_sort[1] + (int(sample_rate) * 5))
+        list_of_points.append(step_temp_sort[-1] - (int(sample_rate) * 5))
 
-    points_grouped = (list(zip(points[::2], points[1::2])))
-    return points, points_grouped
+    points_grouped = (list(zip(list_of_points[::2], list_of_points[1::2])))
+    return list_of_points, points_grouped
 
 
 def calc_sample_rate(data):
@@ -123,17 +124,17 @@ def calc_sample_rate(data):
     return round(1 / data['Event Time'].diff().mean().values[0], 1)
 
 
-def generate_plotting_data(data, points):
+def generate_plotting_data(data, pts):
     """
     Uses the start and end points found in the find_points() function to extract the data and
     calculate averages for each section.
     Returns a dataframe with averages of all channels for each speed step
     """
     extracted_data = []
-    for point in points:
+    for point in pts:
         start = point[0]
         end = point[1]
-        extracted_data.append(pd.DataFrame(data.loc[start:end].mean().to_dict(),index=[data.index.values[-1]]))
+        extracted_data.append(pd.DataFrame(data.loc[start:end].mean().to_dict(), index=[data.index.values[-1]]))
     return pd.concat(extracted_data)
 
 
@@ -148,50 +149,52 @@ def plot_channel(data, file_name, chart, x_axis, y_axis, label, marker=''):
     )
 
 
-def plot_points(data, chart, x_axis, y_axis, points=''):
+def plot_points(data, chart, x_axis, y_axis, indices=''):
     print(f'Plotting {y_axis}')
-    if points == '':
+    if indices == '':
         chart.plot(
             data[x_axis],
             data[y_axis],
             'o',
-            linestyle = 'None'
+            linestyle='None'
         )
     else:
         chart.plot(
             data[x_axis].iloc[points],
             data[y_axis].iloc[points],
             'o',
-            linestyle = 'None'
+            linestyle='None'
         )
 
 # TODO:
 # -----------------------
 # o  Add colour management for plotting when plotting multiple files for comparison
 # o  Determine correct output for graphs
-# o  Add print to PDF or savefig function to save the output into each raw_data folder 
+# o  Add print to PDF or savefig function to save the output into each raw_data folder
 # -----------------------
 
 
 #  Open Files
 # -----------------------
 raw_data = []
-# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-#     '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
-#     '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
-# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-#     '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
-#     '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
-# raw_data.append(get_data('//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
-#     '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
-#     '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
-#     '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
+raw_data.append(get_data(
+    '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+    '/2021-12-10 - 1306-027/1306-027_EOL_TEST_Run1'
+    '/Trace 01314 10 12 2021 17_29_29.&0M_001.CSV'))
+raw_data.append(get_data(
+    '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+    '/2021-12-21 - 1306-027/1306-027_EOL_TEST_Run3'
+    '/Trace 01335 21 12 2021 15_35_39.&11_001.CSV'))
+raw_data.append(get_data(
+    '//DSUK01/Company Shared Documents/Projects/1306/XT REPORTS'
+    '/XT-14972 - PRO6 Noise Investigation/R&D testing/1306-027'
+    '/2022-01-04 - 1306-027/1306-027_EOL TEST_Run5'
+    '/Trace 01356 04 01 2022 18_26_02.&1L_001.CSV'))
 
-raw_data.append(get_data())
-raw_data.append(get_data())
-raw_data.append(get_data())
+# raw_data.append(get_data())
+# raw_data.append(get_data())
 
 
 # Figure 1 - Summary plot
@@ -215,8 +218,9 @@ for rdata, fpath, fdir, fname in raw_data:
 
     rdata, sr = add_calculated_channels(rdata)
     rdata = set_start(rdata)
-    points, points_grouped = find_points(rdata, sr)
-    plotting_data = generate_plotting_data(rdata, points_grouped)
+    points, grouped = find_points(rdata, sr)
+    plotting_data = generate_plotting_data(rdata, grouped)
+    print(plotting_data)
 
     # Fig 1, Plot 1 - IP Speed & Temperature
     plot_channel(rdata, fname, axSecondary, 'Event Time', '[V9] Pri. GBox Oil Temp', 'Oil Temperature [degC]')
@@ -241,7 +245,15 @@ for rdata, fpath, fdir, fname in raw_data:
     plot_channel(plotting_data, fname, ax2[1, 0], 'IP Speed 1', '[P1] Pri.Gbox Press', 'Oil Pressure [bar]', 'o')
 
     # Fig 2, Bottom-Right
-    plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', '[V9] Pri. GBox Oil Temp', 'Oil Temperature [degC]', 'o')
+    plot_channel(
+        plotting_data,
+        fname,
+        ax2[1, 1],
+        'IP Speed 1',
+        '[V9] Pri. GBox Oil Temp',
+        'Oil Temperature [degC]',
+        'o'
+    )
     plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T2', 'RH Flange Temp [degC]', 'o')
     plot_channel(plotting_data, fname, ax2[1, 1], 'IP Speed 1', 'GBox T3', 'LH Flange Temp [degC]', 'o')
 
@@ -250,7 +262,7 @@ for rdata, fpath, fdir, fname in raw_data:
 # -----------------------
 
 # Fig 1, Plot 1
-ax[0].legend(loc=2, facecolor="white") # loc=2 == 'upper left'
+ax[0].legend(loc=2, facecolor="white")  # loc=2 == 'upper left'
 ax[0].set_zorder(1)
 ax[0].set_frame_on(False)
 ax[0].set_title("Input Speed & Oil Temperature", loc='left')
@@ -258,7 +270,7 @@ set_axis([ax[0]], 'y', 'Speed [rpm]', 0, 10000, 1000, 500)
 
 # Fig 1, Plot 1 Secondary Axis
 axSecondary.set_frame_on(True)
-axSecondary.legend(loc=1, facecolor="white") # loc=1 == 'upper right'
+axSecondary.legend(loc=1, facecolor="white")  # loc=1 == 'upper right'
 set_axis([axSecondary], 'y', 'Temperature [degC]', 20, 70, 5, 2.5)
 
 # Fig 1, Plot 2
